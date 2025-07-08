@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Task: Deploy a Django app using AWS EC2 instance
+
+# Clone the GitHub repo
+git_clone() {
+    echo "Cloning the App From Repo..."
+    if [ ! -d "django-notes-app" ]; then
+        git clone https://github.com/LondheShubham153/django-notes-app.git
+    else
+        echo "Repository already cloned."
+    fi
+}
+
+# Install required packages
+get_req() {
+    echo "Installing Docker and Nginx..."
+    sudo apt-get update
+    sudo apt-get install -y docker.io nginx
+}
+
+# Enable and restart services
+restarts() {
+    echo "Restarting services..."
+    sudo chown $USER /var/run/docker.sock
+    sudo systemctl enable docker
+    sudo systemctl enable nginx
+    sudo systemctl restart docker
+    sudo systemctl restart nginx
+}
+
+# Deploy the Django app
+deploy() {
+    echo "Deploying Docker container..."
+    cd django-notes-app || exit
+    docker build -t notes-app .
+    docker run -d -p 8000:8000 notes-app
+}
+
+# Execute all functions
+git_clone
+get_req
+restarts
+deploy
+
+echo "✅ Django App Deployment Complete!"
