@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Task: Deploy a Django app using AWS EC2 instance
+# Task: Deploy a pre-built Django app on AWS EC2 using Docker and Nginx
 
 # Clone the GitHub repo
 git_clone() {
@@ -8,7 +8,7 @@ git_clone() {
     if [ ! -d "django-notes-app" ]; then
         git clone https://github.com/LondheShubham153/django-notes-app.git
     else
-        echo "Repository already cloned."
+        echo "Code directory already exists. Skipping clone..."
     fi
 }
 
@@ -21,7 +21,7 @@ get_req() {
 
 # Enable and restart services
 restarts() {
-    echo "Restarting services..."
+    echo "Restarting Docker and Nginx services..."
     sudo chown $USER /var/run/docker.sock
     sudo systemctl enable docker
     sudo systemctl enable nginx
@@ -31,16 +31,28 @@ restarts() {
 
 # Deploy the Django app
 deploy() {
-    echo "Deploying Docker container..."
-    cd django-notes-app || exit
+    echo "Deploying the Django app container..."
+    cd django-notes-app || { echo "Failed to enter project directory"; exit 1; }
     docker build -t notes-app .
     docker run -d -p 8000:8000 notes-app
 }
 
-# Execute all functions
-git_clone
-get_req
-restarts
-deploy
+### --- MAIN EXECUTION BLOCK ---
 
-echo "✅ Django App Deployment Complete!"
+git_clone
+if ! get_req; then
+    echo " Dependency installation failed!"
+    exit 1
+fi
+
+if ! restarts; then
+    echo " Failed to configure services!"
+    exit 1
+fi
+
+if ! deploy; then
+    echo " Deployment failed!"
+    exit 1
+fi
+
+echo "Django App successfully deployed!"
